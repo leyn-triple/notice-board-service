@@ -10,7 +10,10 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.ColumnDefault;
+import org.hibernate.annotations.DynamicInsert;
 
+@DynamicInsert
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
@@ -30,6 +33,16 @@ public class Notice {
 
   @Column
   private LocalDateTime regDate;
+
+  @Column
+  private LocalDateTime updateDate;
+
+  @Column
+  private LocalDateTime deleteDate;
+
+  @Column
+  @ColumnDefault("false")
+  private boolean deleted;
 
   @Column
   private long likes;
