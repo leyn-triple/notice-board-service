@@ -1,6 +1,7 @@
 package com.triple.board.notice.controller;
 
 import com.triple.board.exception.AlreadyDeletedException;
+import com.triple.board.exception.DuplicateNoticeException;
 import com.triple.board.exception.NoticeNotFoundException;
 import com.triple.board.notice.dto.AddNoticeDto;
 import com.triple.board.notice.dto.UpdateNoticeDto;
@@ -8,9 +9,13 @@ import com.triple.board.notice.entity.Notice;
 import com.triple.board.notice.repository.NoticeRepository;
 import com.triple.board.notice.service.NoticeService;
 import java.time.LocalDateTime;
+import java.util.List;
+import javax.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.Errors;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -29,13 +34,18 @@ public class NoticeController {
   private final NoticeRepository noticeRepository;
 
   @PostMapping("/api/notice")
-  public Notice addNotice(@RequestBody AddNoticeDto addNoticeDto) {
-    return noticeService.addNotice(addNoticeDto);
+  public ResponseEntity<?> addNotice(@RequestBody @Valid AddNoticeDto addNoticeDto,  Errors errors) {
+    return noticeService.addNotice(addNoticeDto, errors);
   }
 
   @GetMapping("/api/notice/{id}")
   public Notice getNotice(@PathVariable Long id) {
     return noticeService.getNotice(id);
+  }
+
+  @GetMapping("/api/notice/latest/{size}")
+  public Page<Notice> noticeLatest(@PathVariable int size) {
+    return noticeService.noticeLatest(size);
   }
 
   @PutMapping("/api/notice/{id}")
@@ -53,6 +63,11 @@ public class NoticeController {
     return noticeService.deleteNotice(id);
   }
 
+  @DeleteMapping("/api/notice/all")
+  public Notice deleteAllNotice(@PathVariable Long id) {
+    return noticeService.deleteAllNotice(id);
+  }
+
   @ExceptionHandler(NoticeNotFoundException.class)
   public ResponseEntity<String> handlerNoticeNotFoundException(NoticeNotFoundException exception) {
     return new ResponseEntity<>(exception.getMessage(), HttpStatus.BAD_REQUEST);
@@ -60,6 +75,11 @@ public class NoticeController {
 
   @ExceptionHandler(AlreadyDeletedException.class)
   public ResponseEntity<String> handlerAlreadyDeletedException(AlreadyDeletedException exception) {
+    return new ResponseEntity<>(exception.getMessage(), HttpStatus.BAD_REQUEST);
+  }
+
+  @ExceptionHandler(DuplicateNoticeException.class)
+  public ResponseEntity<String> handlerDuplicateNoticeException(DuplicateNoticeException exception) {
     return new ResponseEntity<>(exception.getMessage(), HttpStatus.BAD_REQUEST);
   }
 }
