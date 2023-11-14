@@ -8,9 +8,11 @@ import com.triple.board.notice.entity.Notice;
 import com.triple.board.notice.repository.NoticeRepository;
 import com.triple.board.notice.service.NoticeService;
 import java.time.LocalDateTime;
+import javax.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.Errors;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -29,8 +31,8 @@ public class NoticeController {
   private final NoticeRepository noticeRepository;
 
   @PostMapping("/api/notice")
-  public Notice addNotice(@RequestBody AddNoticeDto addNoticeDto) {
-    return noticeService.addNotice(addNoticeDto);
+  public ResponseEntity<?> addNotice(@RequestBody @Valid AddNoticeDto addNoticeDto,  Errors errors) {
+    return noticeService.addNotice(addNoticeDto, errors);
   }
 
   @GetMapping("/api/notice/{id}")
@@ -51,6 +53,11 @@ public class NoticeController {
   @DeleteMapping("/api/notice/{id}")
   public Notice deleteNotice(@PathVariable Long id) {
     return noticeService.deleteNotice(id);
+  }
+
+  @DeleteMapping("/api/notice/all")
+  public Notice deleteAllNotice(@PathVariable Long id) {
+    return noticeService.deleteAllNotice(id);
   }
 
   @ExceptionHandler(NoticeNotFoundException.class)
