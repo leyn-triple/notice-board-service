@@ -1,6 +1,7 @@
 package com.triple.board.notice.controller;
 
 import com.triple.board.exception.AlreadyDeletedException;
+import com.triple.board.exception.DuplicateNoticeException;
 import com.triple.board.exception.NoticeNotFoundException;
 import com.triple.board.notice.dto.AddNoticeDto;
 import com.triple.board.notice.dto.UpdateNoticeDto;
@@ -8,8 +9,10 @@ import com.triple.board.notice.entity.Notice;
 import com.triple.board.notice.repository.NoticeRepository;
 import com.triple.board.notice.service.NoticeService;
 import java.time.LocalDateTime;
+import java.util.List;
 import javax.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.Errors;
@@ -40,6 +43,11 @@ public class NoticeController {
     return noticeService.getNotice(id);
   }
 
+  @GetMapping("/api/notice/latest/{size}")
+  public Page<Notice> noticeLatest(@PathVariable int size) {
+    return noticeService.noticeLatest(size);
+  }
+
   @PutMapping("/api/notice/{id}")
   public Notice updateNotice(@PathVariable Long id, @RequestBody UpdateNoticeDto updateNoticeDto) {
     return noticeService.updateNotice(id, updateNoticeDto);
@@ -67,6 +75,11 @@ public class NoticeController {
 
   @ExceptionHandler(AlreadyDeletedException.class)
   public ResponseEntity<String> handlerAlreadyDeletedException(AlreadyDeletedException exception) {
+    return new ResponseEntity<>(exception.getMessage(), HttpStatus.BAD_REQUEST);
+  }
+
+  @ExceptionHandler(DuplicateNoticeException.class)
+  public ResponseEntity<String> handlerDuplicateNoticeException(DuplicateNoticeException exception) {
     return new ResponseEntity<>(exception.getMessage(), HttpStatus.BAD_REQUEST);
   }
 }
