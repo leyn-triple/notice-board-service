@@ -6,10 +6,7 @@ import com.triple.board.exception.NoticeNotFoundException;
 import com.triple.board.notice.dto.AddNoticeDto;
 import com.triple.board.notice.dto.UpdateNoticeDto;
 import com.triple.board.notice.entity.Notice;
-import com.triple.board.notice.repository.NoticeRepository;
 import com.triple.board.notice.service.NoticeService;
-import java.time.LocalDateTime;
-import java.util.List;
 import javax.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -31,7 +28,6 @@ import org.springframework.web.bind.annotation.RestController;
 public class NoticeController {
 
   private final NoticeService noticeService;
-  private final NoticeRepository noticeRepository;
 
   @PostMapping("/api/notice")
   public ResponseEntity<?> addNotice(@RequestBody @Valid AddNoticeDto addNoticeDto,  Errors errors) {
@@ -82,4 +78,6 @@ public class NoticeController {
   public ResponseEntity<String> handlerDuplicateNoticeException(DuplicateNoticeException exception) {
     return new ResponseEntity<>(exception.getMessage(), HttpStatus.BAD_REQUEST);
   }
+
+
 }
