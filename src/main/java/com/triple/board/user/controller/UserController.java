@@ -1,5 +1,7 @@
 package com.triple.board.user.controller;
 
+import com.auth0.jwt.JWT;
+import com.auth0.jwt.algorithms.Algorithm;
 import com.triple.board.exception.ExistsEmailException;
 import com.triple.board.exception.PasswordNotMatchException;
 import com.triple.board.exception.UserNotFoundException;
@@ -10,9 +12,12 @@ import com.triple.board.user.dto.AddUserDto;
 import com.triple.board.user.dto.FindUserDto;
 import com.triple.board.user.dto.ResponseUserDto;
 import com.triple.board.user.dto.UpdateUserDto;
+import com.triple.board.user.dto.UserLoginDto;
 import com.triple.board.user.dto.UserPasswordDto;
+import com.triple.board.user.entity.User;
 import com.triple.board.user.service.UserService;
 import java.util.List;
+import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -76,6 +81,16 @@ public class UserController {
   public List<NoticeLike> likeNotice(@PathVariable Long id) {
     return userService.likeNotice(id);
 
+  }
+
+  @PostMapping("api/user/login")
+  public ResponseEntity<?> createToken(@RequestBody @Valid UserLoginDto userLoginDto, Errors errors) {
+    return userService.createToken(userLoginDto, errors);
+  }
+
+  @PatchMapping("/api/user/login")
+  public ResponseEntity<?> refreshToken(HttpServletRequest request) {
+    return userService.refreshToken(request);
   }
 
   @ExceptionHandler(UserNotFoundException.class)

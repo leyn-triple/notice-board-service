@@ -1,5 +1,8 @@
 package com.triple.board.user.service;
 
+import com.auth0.jwt.JWT;
+import com.auth0.jwt.algorithms.Algorithm;
+import com.auth0.jwt.exceptions.SignatureVerificationException;
 import com.triple.board.config.ResponseError;
 import com.triple.board.exception.ExistsEmailException;
 import com.triple.board.exception.PasswordNotMatchException;
@@ -13,13 +16,18 @@ import com.triple.board.user.dto.AddUserDto;
 import com.triple.board.user.dto.FindUserDto;
 import com.triple.board.user.dto.ResponseUserDto;
 import com.triple.board.user.dto.UpdateUserDto;
+import com.triple.board.user.dto.UserLoginDto;
+import com.triple.board.user.dto.UserLoginToken;
 import com.triple.board.user.dto.UserPasswordDto;
 import com.triple.board.user.entity.User;
 import com.triple.board.user.repository.UserRepository;
+import com.triple.board.util.PasswordUtils;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.UUID;
+import javax.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
@@ -164,7 +172,6 @@ public class UserService {
     User user = userRepository.findById(id)
         .orElseThrow(() -> new UserNotFoundException("사용자 정보가 없습니다."));
 
-
     try{
       userRepository.delete(user);
     } catch (DataIntegrityViolationException e) {
@@ -186,5 +193,65 @@ public class UserService {
     List<NoticeLike> noticeLikeList = noticeLikeRepository.findByUser(user);
 
     return noticeLikeList;
+  }
+
+  public ResponseEntity<?> createToken(UserLoginDto userLoginDto, Errors errors) {
+
+    if (errors.hasErrors()) {
+      List<ResponseError> responseErrors = new ArrayList<>();
+      errors.getAllErrors().forEach(e -> {
+        responseErrors.add(ResponseError.of(e));
+      });
+      return new ResponseEntity<>(responseErrors, HttpStatus.BAD_REQUEST);
+    }
+
+    User user = userRepository.findByEmail(userLoginDto.getEmail())
+        .orElseThrow(() -> new UserNotFoundException("사용자 정보가 없습니다."));
+
+    if(!PasswordUtils.equalPassword((userLoginDto.getPassword()), user.getPassword())) {
+      throw new PasswordNotMatchException("비밀번호가 일치하지 않습니다.");
+    }
+
+    LocalDateTime expiredDateTime = LocalDateTime.now().plusMonths(1);
+    Date expiredDate = java.sql.Timestamp.valueOf(expiredDateTime);
+
+    String token = JWT.create()
+        .withExpiresAt(expiredDate)
+        .withClaim("user_id", user.getId())
+        .withSubject(user.getUserName())
+        .withIssuer(user.getEmail())
+        .sign(Algorithm.HMAC512("triple".getBytes()));
+
+    return ResponseEntity.ok().body(UserLoginToken.builder().token(token).build());
+  }
+
+  public ResponseEntity<?> refreshToken(HttpServletRequest request) {
+
+    String token = request.getHeader("T-TOKEN");
+    String email = "";
+
+    try {
+      email = JWT.require(Algorithm.HMAC512("triple".getBytes()))
+          .build()
+          .verify(token)
+          .getIssuer();
+    } catch (SignatureVerificationException e) {
+      throw new PasswordNotMatchException("비밀번호가 일치하지 않습니다");
+    }
+    User user = userRepository.findByEmail(email)
+        .orElseThrow(() -> new UserNotFoundException("사용자 정보가 없습니다."));
+
+    LocalDateTime expiredDateTime = LocalDateTime.now().plusMonths(1);
+    Date expiredDate = java.sql.Timestamp.valueOf(expiredDateTime);
+
+    String newToken =  JWT.create()
+        .withExpiresAt(expiredDate)
+        .withClaim("user_id", user.getId())
+        .withSubject(user.getUserName())
+        .withIssuer(user.getEmail())
+        .sign(Algorithm.HMAC512("triple".getBytes()));
+
+    return ResponseEntity.ok().body(UserLoginToken.builder().token(newToken).build());
+
   }
 }
